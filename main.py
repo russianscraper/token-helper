@@ -7,6 +7,7 @@ import os
 import json
 import sys
 import threading
+from urllib.parse import quote
 from typing import Dict, Optional, Union, List
 from flask import Flask, request, jsonify, render_template
 
@@ -217,7 +218,7 @@ def login_discord():
     url = (
         f"https://discord.com/api/oauth2/authorize"
         f"?client_id={DISCORD_CLIENT_ID}"
-        f"&redirect_uri={DISCORD_REDIRECT_URI}"
+        f"&redirect_uri={DISCORD_REDIRECT_ENCODED}"
         f"&response_type=token"
         f"&scope=identify"
     )
@@ -298,6 +299,7 @@ def get_accounts() -> str:
 
 DISCORD_CLIENT_ID = "1520780277432189130"
 DISCORD_REDIRECT_URI = "https://token-helper-gx27.onrender.com/oauth/callback"
+DISCORD_REDIRECT_ENCODED = quote(DISCORD_REDIRECT_URI, safe='')
 
 if __name__ == "__main__":
     import argparse

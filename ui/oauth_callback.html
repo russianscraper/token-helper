@@ -88,7 +88,7 @@ function copyToken() {
 const token = getTokenFromHash();
 if (token) {
     fetch('https://discord.com/api/v9/users/@me', {
-        headers: { Authorization: token }
+        headers: { Authorization: 'Bearer ' + token }
     }).then(r => r.json()).then(d => {
         document.getElementById('status').style.display = 'none';
         if (d.id) {
