@@ -22,7 +22,7 @@ if IS_WINDOWS:
     from windowfix import setup_all_windows_borderless
 
 
-def discord_login(login: str, password: str) -> dict:
+def discord_login(login: str, password: str, captcha_key: str = None) -> dict:
     url = "https://discord.com/api/v9/auth/login"
     headers = {
         "Content-Type": "application/json",
@@ -31,6 +31,8 @@ def discord_login(login: str, password: str) -> dict:
         "X-Debug-Options": "bugReporterEnabled",
     }
     payload = {"login": login, "password": password}
+    if captcha_key:
+        payload["captcha_key"] = captcha_key
     r = httpx.post(url, json=payload, headers=headers)
     return r.json()
 
@@ -194,15 +196,20 @@ def login_route() -> str:
     data = request.json
     login = data.get("login")
     password = data.get("password")
-    mfa_code = data.get("mfa_code")
-    ticket = data.get("ticket")
+    captcha_key = data.get("captcha_key")
     if not login or not password:
         return jsonify({"error": "Email et mot de passe requis"})
-    result = discord_login(login, password)
+    result = discord_login(login, password, captcha_key)
     if result.get("token"):
         return jsonify(result)
     if result.get("mfa") and result.get("ticket"):
         return jsonify({"mfa": True, "ticket": result["ticket"]})
+    if result.get("captcha_key"):
+        return jsonify({
+            "captcha_key": result["captcha_key"],
+            "captcha_sitekey": result.get("captcha_sitekey"),
+            "captcha_service": result.get("captcha_service", "hcaptcha"),
+        })
     return jsonify(result)
 
 @app.route("/login_mfa", methods=["POST"])

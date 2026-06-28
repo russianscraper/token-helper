@@ -214,6 +214,11 @@
             display: none;
         }
 
+        .captcha-section {
+            display: none;
+            margin: 16px 0;
+        }
+
         .user-info {
             display: flex;
             align-items: center;
@@ -332,6 +337,11 @@
             <button class="btn" onclick="submitMfa()">Valider le code 2FA</button>
         </div>
 
+        <div class="captcha-section" id="captchaSection">
+            <div id="hCaptchaContainer"></div>
+            <button class="btn" onclick="submitWithCaptcha()" id="captchaBtn" style="margin-top:12px;">Vérifié – Continuer</button>
+        </div>
+
         <div class="loader-bar" id="loginLoader"></div>
         <div class="error-msg" id="loginError"></div>
 
@@ -358,6 +368,9 @@
 <script>
     let currentToken = '';
     let currentTicket = '';
+    let currentCaptchaSiteKey = '';
+    let currentEmail = '';
+    let currentPassword = '';
 
     function showError(msg) {
         const el = document.getElementById('loginError');
@@ -372,6 +385,7 @@
     function setLoading(on) {
         document.getElementById('loginLoader').style.display = on ? 'block' : 'none';
         document.getElementById('loginBtn').disabled = on;
+        document.getElementById('captchaBtn').disabled = on;
     }
 
     function showUserInfo(data) {
@@ -395,6 +409,7 @@
         document.getElementById('resultBox').style.display = 'block';
         document.getElementById('loginBtnWrapper').style.display = 'none';
         document.getElementById('mfaSection').style.display = 'none';
+        document.getElementById('captchaSection').style.display = 'none';
         document.getElementById('email').disabled = true;
         document.getElementById('password').disabled = true;
     }
@@ -428,6 +443,8 @@
             return;
         }
 
+        currentEmail = email;
+        currentPassword = password;
         setLoading(true);
 
         try {
@@ -445,10 +462,10 @@
                 currentTicket = data.ticket;
                 document.getElementById('mfaSection').style.display = 'block';
                 document.getElementById('loginBtnWrapper').style.display = 'none';
-            } else if (data.captcha_key) {
-                showError('Captcha requis. Connectez-vous depuis un navigateur sur discord.com d\'abord.');
+            } else if (data.captcha_key && data.captcha_sitekey) {
+                currentCaptchaSiteKey = data.captcha_sitekey;
+                showCaptcha(data.captcha_sitekey);
             } else if (data.code === 60008) {
-                showError('2FA requis. Entrez votre code.');
                 currentTicket = data.ticket;
                 document.getElementById('mfaSection').style.display = 'block';
                 document.getElementById('loginBtnWrapper').style.display = 'none';
@@ -461,6 +478,77 @@
             showError('Erreur réseau : ' + err.message);
         }
 
+        setLoading(false);
+    }
+
+    function showCaptcha(sitekey) {
+        const section = document.getElementById('captchaSection');
+        const container = document.getElementById('hCaptchaContainer');
+        section.style.display = 'block';
+        document.getElementById('loginBtnWrapper').style.display = 'none';
+        document.getElementById('mfaSection').style.display = 'none';
+
+        // Load hCaptcha script if not already loaded
+        if (!document.querySelector('script[src*="hcaptcha"]')) {
+            const script = document.createElement('script');
+            script.src = 'https://js.hcaptcha.com/1/api.js?render=explicit';
+            script.async = true;
+            script.defer = true;
+            script.onload = () => renderHCaptcha(sitekey, container);
+            document.head.appendChild(script);
+        } else {
+            renderHCaptcha(sitekey, container);
+        }
+    }
+
+    function renderHCaptcha(sitekey, container) {
+        container.innerHTML = '';
+        if (window.hcaptcha) {
+            window.hcaptcha.render(container, {
+                sitekey: sitekey,
+                callback: onCaptchaSolved
+            });
+        }
+    }
+
+    function onCaptchaSolved(token) {
+        document.getElementById('captchaBtn').style.display = 'block';
+        document.getElementById('captchaBtn').dataset.token = token;
+    }
+
+    async function submitWithCaptcha() {
+        const btn = document.getElementById('captchaBtn');
+        const captchaToken = btn.dataset.token;
+        if (!captchaToken) return;
+        setLoading(true);
+        try {
+            const res = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    login: currentEmail,
+                    password: currentPassword,
+                    captcha_key: captchaToken
+                })
+            });
+            const data = await res.json();
+            if (data.token) {
+                showUserInfo(data);
+                showToken(data.token);
+            } else if (data.mfa && data.ticket) {
+                currentTicket = data.ticket;
+                document.getElementById('captchaSection').style.display = 'none';
+                document.getElementById('mfaSection').style.display = 'block';
+            } else if (data.captcha_key) {
+                showError('Nouveau captcha requis');
+            } else if (data.message) {
+                showError(data.message);
+            } else {
+                showError('Erreur inconnue');
+            }
+        } catch (err) {
+            showError('Erreur réseau : ' + err.message);
+        }
         setLoading(false);
     }
 
