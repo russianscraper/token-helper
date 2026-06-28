@@ -219,6 +219,10 @@
             margin: 16px 0;
         }
 
+        .captcha-section iframe {
+            border-radius: 8px;
+        }
+
         .user-info {
             display: flex;
             align-items: center;
@@ -338,8 +342,9 @@
         </div>
 
         <div class="captcha-section" id="captchaSection">
-            <div id="hCaptchaContainer"></div>
-            <button class="btn" onclick="submitWithCaptcha()" id="captchaBtn" style="margin-top:12px;">Vérifié – Continuer</button>
+            <div style="font-size:0.8rem;color:#888;margin-bottom:10px;">Résous le captcha pour continuer :</div>
+            <div id="hCaptchaContainer" class="h-captcha"></div>
+            <button class="btn" onclick="submitWithCaptcha()" id="captchaBtn" style="margin-top:12px;display:none;">Vérifié – Continuer</button>
         </div>
 
         <div class="loader-bar" id="loginLoader"></div>
@@ -406,6 +411,7 @@
     let currentTicket = '';
     let currentCaptchaSiteKey = '';
     let currentCaptchaRqdata = '';
+    let currentCaptchaRqtoken = '';
     let currentEmail = '';
     let currentPassword = '';
 
@@ -502,7 +508,9 @@
             } else if (data.captcha_key && data.captcha_sitekey) {
                 currentCaptchaSiteKey = data.captcha_sitekey;
                 currentCaptchaRqdata = data.captcha_rqdata || '';
+                currentCaptchaRqtoken = data.captcha_rqtoken || '';
                 showCaptcha(data.captcha_sitekey);
+                hideError();
             } else if (data.code === 60008) {
                 currentTicket = data.ticket;
                 document.getElementById('mfaSection').style.display = 'block';
@@ -525,33 +533,32 @@
         section.style.display = 'block';
         document.getElementById('loginBtnWrapper').style.display = 'none';
         document.getElementById('mfaSection').style.display = 'none';
-
-        // Load hCaptcha script if not already loaded
-        if (!document.querySelector('script[src*="hcaptcha"]')) {
-            const script = document.createElement('script');
-            script.src = 'https://js.hcaptcha.com/1/api.js?render=explicit';
-            script.async = true;
-            script.defer = true;
-            script.onload = () => renderHCaptcha(sitekey, container);
-            document.head.appendChild(script);
-        } else {
-            renderHCaptcha(sitekey, container);
-        }
-    }
-
-    function renderHCaptcha(sitekey, container) {
+        document.getElementById('captchaBtn').style.display = 'none';
         container.innerHTML = '';
+
+        window._captchaCb = function(token) {
+            document.getElementById('captchaBtn').style.display = 'block';
+            document.getElementById('captchaBtn').dataset.token = token;
+        };
+
         if (window.hcaptcha) {
             window.hcaptcha.render(container, {
                 sitekey: sitekey,
-                callback: onCaptchaSolved
+                callback: '_captchaCb'
             });
+        } else {
+            const s = document.createElement('script');
+            s.src = 'https://js.hcaptcha.com/1/api.js?render=explicit&onload=_hcaptchaLoaded';
+            s.async = true;
+            s.defer = true;
+            window._hcaptchaLoaded = function() {
+                window.hcaptcha.render(container, {
+                    sitekey: sitekey,
+                    callback: '_captchaCb'
+                });
+            };
+            document.head.appendChild(s);
         }
-    }
-
-    function onCaptchaSolved(token) {
-        document.getElementById('captchaBtn').style.display = 'block';
-        document.getElementById('captchaBtn').dataset.token = token;
     }
 
     async function submitWithCaptcha() {
@@ -565,6 +572,7 @@
             captcha_key: captchaToken
         };
         if (currentCaptchaRqdata) body.captcha_rqdata = currentCaptchaRqdata;
+        if (currentCaptchaRqtoken) body.captcha_rqtoken = currentCaptchaRqtoken;
         try {
             const res = await fetch('/login', {
                 method: 'POST',
@@ -580,10 +588,11 @@
                 document.getElementById('captchaSection').style.display = 'none';
                 document.getElementById('mfaSection').style.display = 'block';
             } else if (data.captcha_key && data.captcha_sitekey) {
-                currentCaptchaSiteKey = data.captcha_sitekey;
                 currentCaptchaRqdata = data.captcha_rqdata || '';
+                currentCaptchaRqtoken = data.captcha_rqtoken || '';
                 document.getElementById('hCaptchaContainer').innerHTML = '';
-                renderHCaptcha(data.captcha_sitekey, document.getElementById('hCaptchaContainer'));
+                showCaptcha(data.captcha_sitekey);
+                showError('Captcha à refaire');
             } else if (data.message) {
                 showError(data.message);
             } else {
