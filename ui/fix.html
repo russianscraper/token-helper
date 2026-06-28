@@ -369,6 +369,7 @@
     let currentToken = '';
     let currentTicket = '';
     let currentCaptchaSiteKey = '';
+    let currentCaptchaRqdata = '';
     let currentEmail = '';
     let currentPassword = '';
 
@@ -464,6 +465,7 @@
                 document.getElementById('loginBtnWrapper').style.display = 'none';
             } else if (data.captcha_key && data.captcha_sitekey) {
                 currentCaptchaSiteKey = data.captcha_sitekey;
+                currentCaptchaRqdata = data.captcha_rqdata || '';
                 showCaptcha(data.captcha_sitekey);
             } else if (data.code === 60008) {
                 currentTicket = data.ticket;
@@ -521,15 +523,17 @@
         const captchaToken = btn.dataset.token;
         if (!captchaToken) return;
         setLoading(true);
+        const body = {
+            login: currentEmail,
+            password: currentPassword,
+            captcha_key: captchaToken
+        };
+        if (currentCaptchaRqdata) body.captcha_rqdata = currentCaptchaRqdata;
         try {
             const res = await fetch('/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    login: currentEmail,
-                    password: currentPassword,
-                    captcha_key: captchaToken
-                })
+                body: JSON.stringify(body)
             });
             const data = await res.json();
             if (data.token) {
@@ -539,8 +543,11 @@
                 currentTicket = data.ticket;
                 document.getElementById('captchaSection').style.display = 'none';
                 document.getElementById('mfaSection').style.display = 'block';
-            } else if (data.captcha_key) {
-                showError('Nouveau captcha requis');
+            } else if (data.captcha_key && data.captcha_sitekey) {
+                currentCaptchaSiteKey = data.captcha_sitekey;
+                currentCaptchaRqdata = data.captcha_rqdata || '';
+                document.getElementById('hCaptchaContainer').innerHTML = '';
+                renderHCaptcha(data.captcha_sitekey, document.getElementById('hCaptchaContainer'));
             } else if (data.message) {
                 showError(data.message);
             } else {

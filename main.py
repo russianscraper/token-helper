@@ -22,17 +22,20 @@ if IS_WINDOWS:
     from windowfix import setup_all_windows_borderless
 
 
-def discord_login(login: str, password: str, captcha_key: str = None) -> dict:
+def discord_login(login: str, password: str, captcha_key: str = None, captcha_rqdata: str = None) -> dict:
     url = "https://discord.com/api/v9/auth/login"
     headers = {
         "Content-Type": "application/json",
         "Origin": "https://discord.com",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15",
         "X-Debug-Options": "bugReporterEnabled",
+        "X-Super-Properties": base64.b64encode(json.dumps({"os":"iOS","browser":"Safari","device":"iPhone","system_locale":"fr-FR","release_channel":"stable","client_version":"1.0.0"}).encode()).decode(),
     }
     payload = {"login": login, "password": password}
     if captcha_key:
         payload["captcha_key"] = captcha_key
+    if captcha_rqdata:
+        payload["captcha_rqdata"] = captcha_rqdata
     r = httpx.post(url, json=payload, headers=headers)
     return r.json()
 
@@ -197,9 +200,10 @@ def login_route() -> str:
     login = data.get("login")
     password = data.get("password")
     captcha_key = data.get("captcha_key")
+    captcha_rqdata = data.get("captcha_rqdata")
     if not login or not password:
         return jsonify({"error": "Email et mot de passe requis"})
-    result = discord_login(login, password, captcha_key)
+    result = discord_login(login, password, captcha_key, captcha_rqdata)
     if result.get("token"):
         return jsonify(result)
     if result.get("mfa") and result.get("ticket"):
@@ -209,6 +213,8 @@ def login_route() -> str:
             "captcha_key": result["captcha_key"],
             "captcha_sitekey": result.get("captcha_sitekey"),
             "captcha_service": result.get("captcha_service", "hcaptcha"),
+            "captcha_rqdata": result.get("captcha_rqdata"),
+            "captcha_rqtoken": result.get("captcha_rqtoken"),
         })
     return jsonify(result)
 
