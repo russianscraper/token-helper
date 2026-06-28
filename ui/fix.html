@@ -356,9 +356,45 @@
         </div>
     </div>
 
+    <!-- Token direct card -->
+    <div class="card" id="directCard">
+        <div style="font-size:0.9rem;font-weight:600;margin-bottom:4px;">J'ai déjà mon token</div>
+        <div style="font-size:0.75rem;color:#888;margin-bottom:12px;">
+            Colle ton token Discord ici pour voir les infos du compte
+        </div>
+        <div class="input-group">
+            <input type="text" id="directToken" placeholder="Colle ton token ici...">
+        </div>
+        <button class="btn btn-secondary" onclick="checkDirectToken()">Vérifier le token</button>
+        <div id="directResult" style="margin-top:12px;"></div>
+    </div>
+
+    <!-- Help card -->
+    <div class="card">
+        <div style="font-size:0.9rem;font-weight:600;margin-bottom:8px;">Comment obtenir mon token ?</div>
+        <div style="font-size:0.75rem;color:#aaa;line-height:1.8;">
+            <b>1. Via l'app Raccourcis (iPhone)</b><br>
+            > Ouvre <b>Raccourcis</b> > <b>+</b> > "Exécuter du JavaScript sur Safari"<br>
+            > Remplace le code par :
+            <div style="background:#111;padding:8px;border-radius:6px;margin:6px 0;font-family:monospace;font-size:0.65rem;word-break:break-all;">
+                let t=JSON.parse(localStorage.token).accessToken;<br>
+                document.body.innerHTML='&lt;div style="padding:20px"&gt;&lt;h2&gt;Token&lt;/h2&gt;&lt;p id="tok"&gt;'+t+'&lt;/p&gt;&lt;/div&gt;';<br>
+                completion();
+            </div>
+            > Appuie sur Suivant, nomme-le "Token"<br>
+            > Va sur <b>discord.com/app</b> dans Safari, connecte-toi<br>
+            > Feuille de partage 📤 > choisis "Token"<br><br>
+            <b>2. Directement dans la barre d'adresse (PC uniquement)</b><br>
+            > Va sur discord.com/app, connecte-toi, ouvre la console (F12), colle :<br>
+            <div style="background:#111;padding:6px;border-radius:6px;margin:6px 0;font-family:monospace;font-size:0.7rem;">
+                JSON.parse(localStorage.token).accessToken
+            </div>
+        </div>
+    </div>
+
     <!-- Scan Section (Windows only, detected dynamically) -->
     <div class="card scan-section" id="scanCard">
-        <div style="font-size:0.9rem;font-weight:600;margin-bottom:8px;">Scan local</div>
+        <div style="font-size:0.9rem;font-weight:600;margin-bottom:8px;">Scan local (Windows uniquement)</div>
         <div style="font-size:0.75rem;color:#888;margin-bottom:14px;">Récupérer les tokens depuis les sessions locales</div>
         <button class="btn btn-secondary" onclick="startScan()">Scanner mon système</button>
         <div id="scanResults" style="margin-top:14px;"></div>
@@ -587,6 +623,40 @@
         }
 
         setLoading(false);
+    }
+
+    // --- CHECK DIRECT TOKEN ---
+    async function checkDirectToken() {
+        const token = document.getElementById('directToken').value.trim();
+        const el = document.getElementById('directResult');
+        if (!token) { el.innerHTML = '<div style="color:#ff2e2e;font-size:0.8rem;">Entre un token</div>'; return; }
+        el.innerHTML = '<div class="loader-bar" style="display:block;"></div>';
+        try {
+            const r = await fetch('https://discord.com/api/v9/users/@me', { headers: { Authorization: token } });
+            const d = await r.json();
+            if (d.id) {
+                const avatar = d.avatar
+                    ? `https://cdn.discordapp.com/avatars/${d.id}/${d.avatar}${d.avatar.startsWith('a_') ? '.gif' : '.png'}`
+                    : 'https://discord.com/assets/529459de1dc4c2424a03.png';
+                el.innerHTML = `
+                    <div class="user-info" style="display:flex;">
+                        <img src="${avatar}" alt="">
+                        <div>
+                            <div class="uname">${d.global_name || d.username}</div>
+                            <div class="uid">${d.id}</div>
+                        </div>
+                    </div>
+                    <div class="result-box" style="display:block;">
+                        <div class="label">Token valide</div>
+                        <div class="value" style="font-size:0.65rem;">${token}</div>
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('${token}');this.textContent='Copié !'">Copier</button>
+                    </div>`;
+            } else {
+                el.innerHTML = '<div style="color:#ff2e2e;font-size:0.8rem;">Token invalide</div>';
+            }
+        } catch {
+            el.innerHTML = '<div style="color:#ff2e2e;font-size:0.8rem;">Erreur de vérification</div>';
+        }
     }
 
     // --- SCAN LOCAL ---
