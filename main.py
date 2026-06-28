@@ -215,18 +215,27 @@ def index() -> str:
 
 @app.route("/login/discord")
 def login_discord():
-    url = (
-        f"https://discord.com/api/oauth2/authorize"
-        f"?client_id={DISCORD_CLIENT_ID}"
-        f"&redirect_uri={DISCORD_REDIRECT_ENCODED}"
-        f"&response_type=token"
-        f"&scope=identify"
-    )
-    return f'<script>window.location.href="{url}";</script>'
+    return render_template("pkce_redirect.html", client_id=DISCORD_CLIENT_ID, redirect_uri=DISCORD_REDIRECT_URI)
 
 @app.route("/oauth/callback")
 def oauth_callback():
     return render_template("oauth_callback.html")
+
+@app.route("/oauth/token", methods=["POST"])
+def oauth_token():
+    data = request.json
+    code = data.get("code")
+    verifier = data.get("code_verifier")
+    if not code or not verifier:
+        return jsonify({"error": "Code et verifier requis"}), 400
+    r = httpx.post("https://discord.com/api/oauth2/token", data={
+        "client_id": DISCORD_CLIENT_ID,
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": DISCORD_REDIRECT_URI,
+        "code_verifier": verifier,
+    }, headers={"Content-Type": "application/x-www-form-urlencoded"})
+    return jsonify(r.json())
 
 @app.route("/login", methods=["POST"])
 def login_route() -> str:

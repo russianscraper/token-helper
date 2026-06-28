@@ -20,64 +20,35 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.6);
             text-align: center;
         }
-        .logo {
-            width: 56px; height: 56px; margin: 0 auto 16px;
-            border-radius: 14px;
-            box-shadow: 0 0 20px rgba(255,46,46,0.25);
-            border: 1px solid rgba(255,46,46,0.4);
-            display: block;
-        }
+        .logo { width: 56px; height: 56px; margin: 0 auto 16px; border-radius: 14px; box-shadow: 0 0 20px rgba(255,46,46,0.25); border: 1px solid rgba(255,46,46,0.4); display: block; }
         .title { font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; }
-        .loader {
-            width: 40px; height: 40px; margin: 20px auto;
-            border: 4px solid #222; border-top-color: #ff2e2e;
-            border-radius: 50%; animation: spin 0.8s linear infinite;
-        }
+        .loader { width: 40px; height: 40px; margin: 20px auto; border: 4px solid #222; border-top-color: #ff2e2e; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .result-box {
-            background: #111; border: 1px solid #222;
-            border-radius: 10px; padding: 12px 14px; margin-top: 16px;
-            word-break: break-all; text-align: left;
-        }
-        .result-box .label {
-            font-size: 0.65rem; color: #888; text-transform: uppercase;
-            letter-spacing: 0.5px; margin-bottom: 6px;
-        }
+        .result-box { background: #111; border: 1px solid #222; border-radius: 10px; padding: 12px 14px; margin-top: 16px; word-break: break-all; text-align: left; }
+        .result-box .label { font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
         .result-box .value { color: #0f0; font-family: monospace; font-size: 0.75rem; }
-        .btn {
-            width: 100%; padding: 12px;
-            background: #ff2e2e; color: #fff; border: none;
-            border-radius: 10px; font-family: "Poppins", sans-serif;
-            font-size: 1rem; font-weight: 600; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255,46,46,0.25);
-            margin-top: 16px;
-        }
+        .btn { width: 100%; padding: 12px; background: #ff2e2e; color: #fff; border: none; border-radius: 10px; font-family: "Poppins", sans-serif; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(255,46,46,0.25); margin-top: 16px; }
         .btn:hover { background: #e61c1c; }
         .error { color: #ff2e2e; font-size: 0.85rem; margin-top: 12px; }
+        .back { background: #1a1a1a; box-shadow: none; border: 1px solid #333; }
     </style>
 </head>
 <body>
 <div class="card">
     <img src="/static/icon.png" alt="" class="logo" />
-    <div class="title">Connexion réussie</div>
-    <div id="status"><div class="loader"></div><div style="color:#888;font-size:0.85rem;">Récupération du token...</div></div>
+    <div class="title">Récupération du token</div>
+    <div id="status"><div class="loader"></div><div style="color:#888;font-size:0.85rem;">Échange du code...</div></div>
     <div id="result" style="display:none;">
         <div class="result-box">
             <div class="label">Token Discord</div>
             <div class="value" id="tokenValue"></div>
             <button class="btn" onclick="copyToken()">Copier le token</button>
         </div>
-        <button class="btn" style="background:#1a1a1a;box-shadow:none;border:1px solid #333;margin-top:8px;" onclick="window.location.href='/'">Retour à l'accueil</button>
+        <button class="btn back" onclick="window.location.href='/'">Retour à l'accueil</button>
     </div>
     <div id="error" class="error" style="display:none;"></div>
 </div>
 <script>
-function getTokenFromHash() {
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    return params.get('access_token');
-}
-
 function copyToken() {
     const t = document.getElementById('tokenValue').textContent;
     navigator.clipboard.writeText(t).then(() => {
@@ -85,24 +56,43 @@ function copyToken() {
     });
 }
 
-const token = getTokenFromHash();
-if (token) {
-    fetch('https://discord.com/api/v9/users/@me', {
-        headers: { Authorization: 'Bearer ' + token }
-    }).then(r => r.json()).then(d => {
+async function exchangeCode(code, verifier) {
+    const r = await fetch('/oauth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, code_verifier: verifier })
+    });
+    return r.json();
+}
+
+const params = new URLSearchParams(window.location.search);
+const code = params.get('code');
+const verifier = localStorage.getItem('pkce_verifier');
+
+if (code && verifier) {
+    localStorage.removeItem('pkce_verifier');
+    exchangeCode(code, verifier).then(data => {
         document.getElementById('status').style.display = 'none';
-        if (d.id) {
-            document.getElementById('tokenValue').textContent = token;
-            document.getElementById('result').style.display = 'block';
+        if (data.access_token) {
+            fetch('https://discord.com/api/v9/users/@me', {
+                headers: { Authorization: 'Bearer ' + data.access_token }
+            }).then(r => r.json()).then(d => {
+                if (d.id) {
+                    document.getElementById('tokenValue').textContent = data.access_token;
+                    document.getElementById('result').style.display = 'block';
+                } else {
+                    document.getElementById('error').textContent = 'Token invalide: ' + (d.message || 'Erreur');
+                    document.getElementById('error').style.display = 'block';
+                }
+            });
         } else {
-            document.getElementById('status').style.display = 'none';
-            document.getElementById('error').textContent = 'Token invalide: ' + (d.message || 'Erreur');
+            document.getElementById('error').textContent = 'Erreur: ' + JSON.stringify(data);
             document.getElementById('error').style.display = 'block';
         }
     });
 } else {
     document.getElementById('status').style.display = 'none';
-    document.getElementById('error').textContent = 'Aucun token trouvé. Essaie de te reconnecter.';
+    document.getElementById('error').textContent = code ? 'Code verifier manquant' : 'Aucun code reçu';
     document.getElementById('error').style.display = 'block';
 }
 </script>

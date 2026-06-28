@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redirection...</title>
+<style>body{background:#050505;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;}</style>
+</head>
+<body>
+<div style="text-align:center;">
+<div style="width:40px;height:40px;margin:20px auto;border:4px solid #222;border-top-color:#ff2e2e;border-radius:50%;animation:spin .8s linear infinite;"></div>
+<div>Redirection vers Discord...</div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+<script>
+function b64url(buf) {
+    return btoa(String.fromCharCode(...new Uint8Array(buf)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+async function go() {
+    const v = b64url(crypto.getRandomValues(new Uint8Array(64)));
+    const c = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)));
+    localStorage.setItem('pkce_verifier', v);
+    const ru = {{ redirect_uri | tojson }};
+    window.location.href = 'https://discord.com/api/oauth2/authorize?client_id={{ client_id }}&redirect_uri=' + encodeURIComponent(ru) + '&response_type=code&scope=identify&code_challenge_method=S256&code_challenge=' + c;
+}
+go();
+</script>
+</body>
+</html>
