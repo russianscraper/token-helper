@@ -212,6 +212,21 @@ quit_event: threading.Event = threading.Event()
 def index() -> str:
     return render_template("fix.html")
 
+@app.route("/login/discord")
+def login_discord():
+    url = (
+        f"https://discord.com/api/oauth2/authorize"
+        f"?client_id={DISCORD_CLIENT_ID}"
+        f"&redirect_uri={DISCORD_REDIRECT_URI}"
+        f"&response_type=token"
+        f"&scope=identify"
+    )
+    return f'<script>window.location.href="{url}";</script>'
+
+@app.route("/oauth/callback")
+def oauth_callback():
+    return render_template("oauth_callback.html")
+
 @app.route("/login", methods=["POST"])
 def login_route() -> str:
     data = request.json
@@ -282,7 +297,10 @@ def get_accounts() -> str:
 
 
 if __name__ == "__main__":
-    import argparse
+    DISCORD_CLIENT_ID = "1520780277432189130"
+DISCORD_REDIRECT_URI = "https://token-helper-gx27.onrender.com/oauth/callback"
+
+import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--server", action="store_true", help="Run in server mode (no GUI)")
     parser.add_argument("--port", type=int, default=3805, help="Port to run on")

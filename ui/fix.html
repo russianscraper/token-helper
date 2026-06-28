@@ -319,7 +319,7 @@
     <div class="card" id="loginCard">
         <img src="/static/icon.png" alt="" class="logo" />
         <div class="title">Token Helper</div>
-        <div class="subtitle">Connectez-vous à Discord pour récupérer votre token</div>
+        <div class="subtitle">Connectez-vous avec Discord pour récupérer votre token</div>
 
         <div class="user-info" id="userInfo" style="display:none;"></div>
 
@@ -349,6 +349,11 @@
 
         <div class="loader-bar" id="loginLoader"></div>
         <div class="error-msg" id="loginError"></div>
+
+        <div class="divider">OU</div>
+        <button class="btn" onclick="window.location.href='/login/discord'" style="background:#5865F2;box-shadow:0 4px 15px rgba(88,101,242,0.3);">Se connecter avec Discord</button>
+
+        <div class="divider">ou par email</div>
 
         <div id="loginBtnWrapper">
             <button class="btn" onclick="submitLogin()" id="loginBtn">Se connecter</button>
