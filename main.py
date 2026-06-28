@@ -1,3 +1,4 @@
+from __future__ import annotations
 import httpx
 import time
 import base64
