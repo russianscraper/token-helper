@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Helper</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;500;600;700&display=swap">
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            min-height: 100vh;
+            background-color: #050505;
+            color: #ffffff;
+            font-family: "Poppins", sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        main {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card {
+            width: 100%;
+            padding: 32px 24px;
+            border-radius: 20px;
+            background-color: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .card + .card {
+            margin-top: 16px;
+        }
+
+        .logo {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 16px;
+            box-shadow: 0 0 24px rgba(255, 46, 46, 0.25);
+            border: 1px solid rgba(255, 46, 46, 0.4);
+            display: block;
+        }
+
+        .title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 4px;
+            text-shadow: 0 0 20px rgba(255, 46, 46, 0.15);
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: #999;
+            text-align: center;
+            margin-bottom: 24px;
+            font-weight: 400;
+        }
+
+        .input-group {
+            margin-bottom: 14px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #aaa;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 14px;
+            background-color: #141414;
+            border: 1px solid #222;
+            border-radius: 10px;
+            color: #fff;
+            font-family: "Poppins", sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #ff2e2e;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #ff2e2e;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-family: "Poppins", sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(255, 46, 46, 0.25);
+        }
+
+        .btn:hover {
+            background-color: #e61c1c;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background-color: #1a1a1a;
+            box-shadow: none;
+            border: 1px solid #333;
+        }
+
+        .btn-secondary:hover {
+            background-color: #222;
+            border-color: #ff2e2e;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 16px 0;
+            color: #444;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background-color: #1a1a1a;
+        }
+
+        .divider::before { margin-right: 12px; }
+        .divider::after { margin-left: 12px; }
+
+        .result-box {
+            background-color: #111;
+            border: 1px solid #222;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-top: 16px;
+            word-break: break-all;
+            font-size: 0.75rem;
+            font-family: monospace;
+            display: none;
+            position: relative;
+        }
+
+        .result-box .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: #ff2e2e;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            font-family: "Poppins", sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .result-box .copy-btn:hover {
+            background-color: #e61c1c;
+        }
+
+        .result-box .label {
+            font-size: 0.65rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .result-box .value {
+            color: #0f0;
+            padding-right: 60px;
+        }
+
+        .error-msg {
+            color: #ff2e2e;
+            font-size: 0.8rem;
+            text-align: center;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .mfa-section {
+            display: none;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .user-info img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 46, 46, 0.2);
+        }
+
+        .user-info .uname {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .user-info .uid {
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        .scan-section {
+            display: none;
+        }
+
+        .token-account {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background-color: #111;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            margin-bottom: 8px;
+        }
+
+        .token-account:hover {
+            border-color: #ff2e2e;
+            background-color: #161616;
+        }
+
+        .token-account img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+
+        .token-account .name {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .token-account .copied {
+            margin-left: auto;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #ff2e2e;
+            display: none;
+        }
+
+        .loader-bar {
+            height: 4px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #ff2e2e, #800000);
+            background-size: 200% 100%;
+            animation: load 1s ease infinite;
+            margin: 16px 0;
+            display: none;
+        }
+
+        @keyframes load {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        @media (max-width: 500px) {
+            body { padding: 12px; }
+            .card { padding: 24px 16px; border-radius: 16px; }
+            .title { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+
+<main>
+    <!-- Login Card -->
+    <div class="card" id="loginCard">
+        <img src="/static/icon.png" alt="" class="logo" />
+        <div class="title">Token Helper</div>
+        <div class="subtitle">Connectez-vous à Discord pour récupérer votre token</div>
+
+        <div class="user-info" id="userInfo" style="display:none;"></div>
+
+        <div class="input-group">
+            <label>Email / Téléphone</label>
+            <input type="text" id="email" placeholder="email@exemple.com" autocomplete="email">
+        </div>
+
+        <div class="input-group">
+            <label>Mot de passe</label>
+            <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+
+        <div class="mfa-section" id="mfaSection">
+            <div class="input-group">
+                <label>Code 2FA</label>
+                <input type="text" id="mfaCode" placeholder="000000" inputmode="numeric" maxlength="8">
+            </div>
+            <button class="btn" onclick="submitMfa()">Valider le code 2FA</button>
+        </div>
+
+        <div class="loader-bar" id="loginLoader"></div>
+        <div class="error-msg" id="loginError"></div>
+
+        <div id="loginBtnWrapper">
+            <button class="btn" onclick="submitLogin()" id="loginBtn">Se connecter</button>
+        </div>
+
+        <div class="result-box" id="resultBox">
+            <div class="label">Token Discord</div>
+            <div class="value" id="tokenValue"></div>
+            <button class="copy-btn" onclick="copyToken()">Copier</button>
+        </div>
+    </div>
+
+    <!-- Scan Section (Windows only, detected dynamically) -->
+    <div class="card scan-section" id="scanCard">
+        <div style="font-size:0.9rem;font-weight:600;margin-bottom:8px;">Scan local</div>
+        <div style="font-size:0.75rem;color:#888;margin-bottom:14px;">Récupérer les tokens depuis les sessions locales</div>
+        <button class="btn btn-secondary" onclick="startScan()">Scanner mon système</button>
+        <div id="scanResults" style="margin-top:14px;"></div>
+    </div>
+</main>
+
+<script>
+    let currentToken = '';
+    let currentTicket = '';
+
+    function showError(msg) {
+        const el = document.getElementById('loginError');
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    function hideError() {
+        document.getElementById('loginError').style.display = 'none';
+    }
+
+    function setLoading(on) {
+        document.getElementById('loginLoader').style.display = on ? 'block' : 'none';
+        document.getElementById('loginBtn').disabled = on;
+    }
+
+    function showUserInfo(data) {
+        const el = document.getElementById('userInfo');
+        const avatar = data.avatar
+            ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}${data.avatar.startsWith('a_') ? '.gif' : '.png'}`
+            : 'https://discord.com/assets/529459de1dc4c2424a03.png';
+        el.innerHTML = `
+            <img src="${avatar}" alt="">
+            <div>
+                <div class="uname">${data.global_name || data.username}</div>
+                <div class="uid">${data.id}</div>
+            </div>
+        `;
+        el.style.display = 'flex';
+    }
+
+    function showToken(token) {
+        currentToken = token;
+        document.getElementById('tokenValue').textContent = token;
+        document.getElementById('resultBox').style.display = 'block';
+        document.getElementById('loginBtnWrapper').style.display = 'none';
+        document.getElementById('mfaSection').style.display = 'none';
+        document.getElementById('email').disabled = true;
+        document.getElementById('password').disabled = true;
+    }
+
+    async function copyToken() {
+        if (!currentToken) return;
+        try {
+            await navigator.clipboard.writeText(currentToken);
+            const btn = document.querySelector('#resultBox .copy-btn');
+            btn.textContent = 'Copié !';
+            setTimeout(() => { btn.textContent = 'Copier'; }, 2000);
+        } catch {
+            const ta = document.createElement('textarea');
+            ta.value = currentToken;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        }
+    }
+
+    async function submitLogin() {
+        hideError();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        if (!email || !password) {
+            showError('Email et mot de passe requis');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const res = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login: email, password })
+            });
+            const data = await res.json();
+
+            if (data.token) {
+                showUserInfo(data);
+                showToken(data.token);
+            } else if (data.mfa && data.ticket) {
+                currentTicket = data.ticket;
+                document.getElementById('mfaSection').style.display = 'block';
+                document.getElementById('loginBtnWrapper').style.display = 'none';
+            } else if (data.captcha_key) {
+                showError('Captcha requis. Connectez-vous depuis un navigateur sur discord.com d\'abord.');
+            } else if (data.code === 60008) {
+                showError('2FA requis. Entrez votre code.');
+                currentTicket = data.ticket;
+                document.getElementById('mfaSection').style.display = 'block';
+                document.getElementById('loginBtnWrapper').style.display = 'none';
+            } else if (data.message) {
+                showError(data.message);
+            } else {
+                showError('Erreur inconnue');
+            }
+        } catch (err) {
+            showError('Erreur réseau : ' + err.message);
+        }
+
+        setLoading(false);
+    }
+
+    async function submitMfa() {
+        hideError();
+        const code = document.getElementById('mfaCode').value.trim();
+        if (!code || !currentTicket) return;
+
+        setLoading(true);
+
+        try {
+            const res = await fetch('/login_mfa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticket: currentTicket, code })
+            });
+            const data = await res.json();
+
+            if (data.token) {
+                showUserInfo(data);
+                showToken(data.token);
+            } else if (data.message) {
+                showError(data.message);
+            } else {
+                showError('Code 2FA invalide');
+            }
+        } catch (err) {
+            showError('Erreur réseau : ' + err.message);
+        }
+
+        setLoading(false);
+    }
+
+    // --- SCAN LOCAL ---
+    async function startScan() {
+        const el = document.getElementById('scanResults');
+        el.innerHTML = '<div class="loader-bar" style="display:block;"></div>';
+
+        try {
+            const res = await fetch('/get_accounts');
+            const data = await res.json();
+            const accounts = Object.values(data);
+
+            if (accounts.length === 0) {
+                el.innerHTML = '<div style="text-align:center;color:#888;font-size:0.8rem;">Aucun token trouvé</div>';
+                return;
+            }
+
+            el.innerHTML = '';
+            accounts.forEach(acc => {
+                const div = document.createElement('div');
+                div.className = 'token-account';
+                const avatar = acc.avatar
+                    ? `https://cdn.discordapp.com/avatars/${acc.id}/${acc.avatar}${acc.avatar.startsWith('a_') ? '.gif' : '.png'}`
+                    : 'https://discord.com/assets/529459de1dc4c2424a03.png';
+                div.innerHTML = `
+                    <img src="${avatar}" alt="">
+                    <span class="name">${acc.global_name || acc.username}</span>
+                    <span class="copied">COPIÉ !</span>
+                `;
+                div.onclick = async () => {
+                    currentToken = acc.token;
+                    await copyToken();
+                    const copied = div.querySelector('.copied');
+                    copied.style.display = 'block';
+                    setTimeout(() => { copied.style.display = 'none'; }, 2000);
+                };
+                el.appendChild(div);
+            });
+        } catch {
+            el.innerHTML = '<div style="text-align:center;color:#ff2e2e;font-size:0.8rem;">Erreur de connexion</div>';
+        }
+    }
+
+    // Check if scan is available (Windows)
+    fetch('/get_accounts')
+        .then(r => r.json())
+        .then(data => {
+            if (Object.keys(data).length > 0 || navigator.platform.includes('Win')) {
+                document.getElementById('scanCard').style.display = 'block';
+            }
+        })
+        .catch(() => {});
+</script>
+</body>
+</html>
