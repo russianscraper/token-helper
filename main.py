@@ -296,11 +296,11 @@ def get_accounts() -> str:
     return jsonify(accounts)
 
 
-if __name__ == "__main__":
-    DISCORD_CLIENT_ID = "1520780277432189130"
+DISCORD_CLIENT_ID = "1520780277432189130"
 DISCORD_REDIRECT_URI = "https://token-helper-gx27.onrender.com/oauth/callback"
 
-import argparse
+if __name__ == "__main__":
+    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--server", action="store_true", help="Run in server mode (no GUI)")
     parser.add_argument("--port", type=int, default=3805, help="Port to run on")
