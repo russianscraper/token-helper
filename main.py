@@ -22,20 +22,38 @@ if IS_WINDOWS:
     from windowfix import setup_all_windows_borderless
 
 
-def discord_login(login: str, password: str, captcha_key: str = None, captcha_rqdata: str = None) -> dict:
+def get_fingerprint() -> str:
+    try:
+        r = httpx.get("https://discord.com/api/v9/experiments", headers={
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15",
+        })
+        return r.json().get("fingerprint", "")
+    except:
+        return ""
+
+def discord_login(login: str, password: str, captcha_key: str = None, captcha_rqdata: str = None, captcha_rqtoken: str = None) -> dict:
     url = "https://discord.com/api/v9/auth/login"
+    super_props = base64.b64encode(json.dumps({
+        "os": "iOS", "browser": "Discord iOS", "device": "iPhone",
+        "system_locale": "fr-FR", "client_version": "268.0",
+        "release_channel": "stable", "client_build_number": 322590,
+        "has_client_mods": False
+    }).encode()).decode()
     headers = {
         "Content-Type": "application/json",
         "Origin": "https://discord.com",
         "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15",
-        "X-Debug-Options": "bugReporterEnabled",
-        "X-Super-Properties": base64.b64encode(json.dumps({"os":"iOS","browser":"Safari","device":"iPhone","system_locale":"fr-FR","release_channel":"stable","client_version":"1.0.0"}).encode()).decode(),
+        "X-Super-Properties": super_props,
+        "X-Fingerprint": get_fingerprint(),
+        "Accept-Language": "fr-FR,fr;q=0.9",
     }
     payload = {"login": login, "password": password}
     if captcha_key:
         payload["captcha_key"] = captcha_key
     if captcha_rqdata:
         payload["captcha_rqdata"] = captcha_rqdata
+    if captcha_rqtoken:
+        payload["captcha_rqtoken"] = captcha_rqtoken
     r = httpx.post(url, json=payload, headers=headers)
     return r.json()
 
@@ -201,9 +219,10 @@ def login_route() -> str:
     password = data.get("password")
     captcha_key = data.get("captcha_key")
     captcha_rqdata = data.get("captcha_rqdata")
+    captcha_rqtoken = data.get("captcha_rqtoken")
     if not login or not password:
         return jsonify({"error": "Email et mot de passe requis"})
-    result = discord_login(login, password, captcha_key, captcha_rqdata)
+    result = discord_login(login, password, captcha_key, captcha_rqdata, captcha_rqtoken)
     if result.get("token"):
         return jsonify(result)
     if result.get("mfa") and result.get("ticket"):
