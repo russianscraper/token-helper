@@ -213,6 +213,10 @@ quit_event: threading.Event = threading.Event()
 def index() -> str:
     return render_template("fix.html")
 
+@app.route("/discord")
+def discord_page():
+    return render_template("discord.html")
+
 @app.route("/login/discord")
 def login_discord():
     return render_template("pkce_redirect.html", client_id=DISCORD_CLIENT_ID, redirect_uri=DISCORD_REDIRECT_URI)
